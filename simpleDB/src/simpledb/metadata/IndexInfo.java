@@ -7,6 +7,7 @@ import simpledb.tx.Transaction;
 import simpledb.record.*;
 import simpledb.index.Index;
 import simpledb.index.hash.HashIndex; 
+import simpledb.index.inverted.InvertedIndex;
 import simpledb.index.btree.BTreeIndex; //in case we change to btree indexing
 
 
@@ -46,14 +47,17 @@ public class IndexInfo {
     * @return the Index object associated with this information
     */
    public Index open() {
+	   //TODO: keep schema empty?
       Schema sch = schema();
       // Create new HashIndex for hash indexing
       //TODO: Remove
       System.out.println("Opening the hash index here!!!!");
       if(idxtype.equals("hash"))
     	  return new HashIndex(idxname, sch, tx);
-      else
+      else if (idxtype.equals("btree"))
     	  return new BTreeIndex(idxname, sch, tx);
+      else
+    	  return new InvertedIndex(idxname, sch, tx);
    }
    
    /**

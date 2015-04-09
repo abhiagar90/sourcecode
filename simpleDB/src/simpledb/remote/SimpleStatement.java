@@ -15,6 +15,7 @@ public class SimpleStatement extends StatementAdapter {
       rstmt = s;
    }
    
+   //this is what is called when we call executequery from a client
    public ResultSet executeQuery(String qry) throws SQLException {
       try {
          RemoteResultSet rrs = rstmt.executeQuery(qry);
