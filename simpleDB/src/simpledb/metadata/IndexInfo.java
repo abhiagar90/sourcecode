@@ -52,6 +52,9 @@ public class IndexInfo {
       // Create new HashIndex for hash indexing
       //TODO: Remove
       System.out.println("Opening the hash index here!!!!");
+      //new HeightManageBtree().insertNewHeightEntry(1, idxname);
+      //new HeightManageBtree().updateHeight(5, idxname);
+      //System.out.println("After opening: "+new HeightManageBtree().getHeight(idxname));
       if(idxtype.equals("hash"))
     	  return new HashIndex(idxname, sch, tx);
       else if (idxtype.equals("btree"))
@@ -71,6 +74,7 @@ public class IndexInfo {
     * which provides the estimate.
     * @return the number of block accesses required to traverse the index
     */
+   //TODO: enter for INv Btree?
    public int blocksAccessed() {
       TableInfo idxti = new TableInfo("", schema());
       int rpb = BLOCK_SIZE / idxti.recordLength();
@@ -126,5 +130,10 @@ public class IndexInfo {
          sch.addStringField("dataval", fldlen);
       }
       return sch;
+   }
+   
+   public String getIdxType()
+   {
+	   return idxtype;
    }
 }

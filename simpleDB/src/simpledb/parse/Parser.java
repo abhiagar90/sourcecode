@@ -1,6 +1,7 @@
 package simpledb.parse;
 
 import java.util.*;
+
 import simpledb.query.*;
 import simpledb.record.Schema;
 
@@ -36,18 +37,81 @@ public class Parser {
 			return new ConstantExpression(constant());
 	}
 
-	public Term term() {
+	//TODO: remove or morph
+	public Term oldterm(Collection<String> tables) {
 		Expression lhs = expression();
-		lex.eatDelim('=');
-		Expression rhs = expression();
-		return new Term(lhs, rhs);
+		if (lex.matchKeyword("contains")) {
+			ArrayList<String> operands = new ArrayList<String>();
+			ArrayList<String> operators = new ArrayList<String>();
+			lex.eatKeyword("contains");
+			lex.eatDelim('(');
+
+			operands.add(lex.eatStringConstant());
+			do {
+				if (lex.matchKeyword("and")) {
+					lex.eatKeyword("and");
+					operators.add("and");
+				} else if (lex.matchKeyword("or")) {
+					lex.eatKeyword("or");
+					operators.add("or");
+				} else if (lex.matchDelim(')')) {
+					lex.eatDelim(')');
+					break;
+				} else {
+					throw new BadSyntaxException();
+				}
+				operands.add(lex.eatStringConstant());
+
+			} while (true);
+
+			return new Term(lhs, operands, operators, tables);
+
+		} else {
+			lex.eatDelim('=');
+			Expression rhs = expression();
+			return new Term(lhs, rhs);
+		}
 	}
 
-	public Predicate predicate() {
-		Predicate pred = new Predicate(term());
+	//TODO: morph now!!
+	public Term term(Collection<String> tables) {
+		Expression lhs = expression();
+		if (lex.matchKeyword("contains")) {
+			ArrayList<String> operands = new ArrayList<String>();
+			ArrayList<String> operators = new ArrayList<String>();
+			lex.eatKeyword("contains");
+
+			do {
+				lex.eatDelim('(');
+				operands.add(lex.eatStringConstant());
+				lex.eatDelim(')');
+
+				if (lex.matchKeyword("and")) {
+					lex.eatKeyword("and");
+					operators.add("and");
+				} else if (lex.matchKeyword("or")) {
+					lex.eatKeyword("or");
+					operators.add("or");
+				} else if (lex.matchDelim(';')) { 
+					break; //TODO: if contains works with = type expressions also, then change
+					//TODO: precedence of or and and
+				}
+			} while (true);
+
+			return new Term(lhs, operands, operators, tables);
+
+		} else {
+			lex.eatDelim('=');
+			Expression rhs = expression();
+			return new Term(lhs, rhs);
+		}
+	}
+
+	public Predicate predicate(Collection<String> tables) {
+		Predicate pred = new Predicate(term(tables));
 		if (lex.matchKeyword("and")) {
 			lex.eatKeyword("and");
-			pred.conjoinWith(predicate());
+			pred.conjoinWith(predicate(tables));
 		}
 		return pred;
 	}
@@ -63,13 +127,7 @@ public class Parser {
 		Predicate pred = new Predicate();
 		if (lex.matchKeyword("where")) {
 			lex.eatKeyword("where");
-			pred = predicate();
-		} else if (lex.matchKeyword("contains")) { //code is useless for now
-			lex.eatKeyword("contains");
-			//something like the predicate join above for our case
-			lex.eatDelim('(');
-			String queryterm = field();
-			lex.eatDelim(')');
+			pred = predicate(tables);
 		}
 		return new QueryData(fields, tables, pred);
 	}
@@ -123,10 +181,12 @@ public class Parser {
 		lex.eatKeyword("delete");
 		lex.eatKeyword("from");
 		String tblname = lex.eatId();
+		// TODO: do check this
+		Collection<String> tables = Arrays.asList(tblname);
 		Predicate pred = new Predicate();
 		if (lex.matchKeyword("where")) {
 			lex.eatKeyword("where");
-			pred = predicate();
+			pred = predicate(tables);
 		}
 		return new DeleteData(tblname, pred);
 	}
@@ -172,6 +232,8 @@ public class Parser {
 	public ModifyData modify() {
 		lex.eatKeyword("update");
 		String tblname = lex.eatId();
+		// TODO: check this
+		Collection<String> tables = Arrays.asList(tblname);
 		lex.eatKeyword("set");
 		String fldname = field();
 		lex.eatDelim('=');
@@ -179,7 +241,7 @@ public class Parser {
 		Predicate pred = new Predicate();
 		if (lex.matchKeyword("where")) {
 			lex.eatKeyword("where");
-			pred = predicate();
+			pred = predicate(tables);
 		}
 		return new ModifyData(tblname, fldname, newval, pred);
 	}
@@ -248,4 +310,6 @@ public class Parser {
 		lex.eatDelim(')');
 		return new CreateIndexData(idxname, tblname, fldname, idxtype);
 	}
+	
+	
 }

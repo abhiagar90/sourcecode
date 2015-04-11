@@ -61,6 +61,8 @@ public class BTreeDir {
     * @param e the directory entry to be added as a child of the new root
     */
    public void makeNewRoot(DirEntry e) {
+	   //TODO: remove
+	  System.out.println("YYYYYYYYYYYY: Make New Root Called!!");
       Constant firstval = contents.getDataVal(0);
       int level = contents.getFlag();
       Block newblk = contents.split(0, level); //ie, transfer all the records
